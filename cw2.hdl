@@ -1,0 +1,50 @@
+CHIP cw2 {
+	IN indata[8], enable, load;
+	OUT sout, complete;
+
+	PARTS:
+	// data input phase:
+	// somewhere to store the input data - Register
+	// store an 8-bit binary value from the 8-bit wide input indata
+	// when the load input has value 1
+	Register(x[0] = indata[0], load = load, out[0] = indata0);
+	Register(x[1] = indata[1], load = load, out[1] = indata1);
+	Register(x[2] = indata[2], load = load, out[2] = indata2);
+	Register(x[3] = indata[3], load = load, out[3] = indata3);
+	Register(x[4] = indata[4], load = load, out[4] = indata4);
+	Register(x[5] = indata[5], load = load, out[5] = indata5);
+	Register(x[6] = indata[6], load = load, out[6] = indata6);
+	Register(x[7] = indata[7], load = load, out[7] = indata7);
+
+
+	// data output phase:
+	// a timer to tell which clock cycle it is in currently - 8-bit shifter
+	// 8 clock cycles
+	And(x = enable, y = notDff,out = dffInput);
+
+	DFF(x = dffInput, out = out0, out = out00);
+	DFF(x = out0, out = out1, out = out11);
+	DFF(x = out1, out = out2, out = out22);
+	DFF(x = out2, out = out3, out = out33);
+	DFF(x = out3, out = out4, out = out44);
+	DFF(x = out4, out = out5, out = out55);
+	DFF(x = out5, out = out6, out = out66);
+	DFF(x = out6, out = out7, out = out77);
+	
+	Or8Way(x[0]=out00, x[1] = out11, x[2] = out22, x[3] = out33, x[4] = out44, x[5] = out55, x[6] = out66, x[7] = out77, out=dff);
+	Not(x = dff, out = notDff);
+
+	// a fetcher to get the stored data and pass it into the output
+	Mux(y = indata0, x = false, sel = out00, out = sout0);
+	Mux(y = indata1, x = false, sel = out11, out = sout1);
+	Mux(y = indata2, x = false, sel = out22, out = sout2);
+	Mux(y = indata3, x = false, sel = out33, out = sout3);
+	Mux(y = indata4, x = false, sel = out44, out = sout4);
+	Mux(y = indata5, x = false, sel = out55, out = sout5);
+	Mux(y = indata6, x = false, sel = out66, out = sout6);
+	Mux(y = indata7, x = false, sel = out77, out = sout7);
+
+	Or8Way(x[0] = sout0, x[1] = sout1, x[2] = sout2, x[3] = sout3, x[4] = sout4, x[5] = sout5, x[6] = sout6, x[7] = sout7, out = sout);
+	// a decider to tell the end of every 8 clock cycles
+	And(x = out77, y = true, out = complete);
+}
